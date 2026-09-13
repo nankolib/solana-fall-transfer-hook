@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
 use spl_tlv_account_resolution::{
-    account::ExtraAccountMeta, 
+    account::ExtraAccountMeta,
     seeds::Seed,
     state::ExtraAccountMetaList
 };
@@ -26,19 +26,16 @@ pub struct InitializeExtraAccountMetaList<'info> {
 
 pub fn extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
     Ok(vec![
-        // A single, program-wide rate limit account derived only from the
-        // "rate_limit" literal seed. Every transfer of every mint by every
-        // owner resolves to this one account.
-        //
-        // CHALLENGE: make the rate limit account deterministic *per mint and
-        // per owner* by adding the mint and owner as extra seeds.
-        //
-        // The seeds here must match the PDA seeds used to create the account
-        // in `initialize.rs` and to load it in `transfer_hook.rs` (and the
-        // test helpers), so all of them have to be updated together.
+        // The rate limit PDA, derived per mint and per owner. Seeds here can't
+        // name accounts, only point at their position in the hook's Execute
+        // instruction: 0 source, 1 mint, 2 destination, 3 owner, 4 meta list.
+        // These must match the seeds in `initialize.rs`, `transfer_hook.rs`
+        // and the test helpers.
         ExtraAccountMeta::new_with_seeds(
             &[
                 Seed::Literal { bytes: b"rate_limit".to_vec() },
+                Seed::AccountKey { index: 1 },          // the mint
+                Seed::AccountKey { index: 3 },          // the owner
             ],
             false,                                  // is signer
             true,                                   // is writable
